@@ -1,0 +1,47 @@
+server:
+  port: 8080
+  context-path:
+
+# JWT Auth
+auth:
+  secret: some-random-secret
+  expires: 604800
+  header: Authorization
+
+spring:
+  profiles:
+      active: production
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://127.0.0.1:3306/shipManager?useUnicode=true&characterEncoding=utf8&autoReconnet=true&rewriteBatchedStatements=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.jdbc.Driver
+    druid:
+      initial-size: 100
+      min-idle: 100
+      max-active: 500
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: select 1 from dual
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      max-pool-prepared-statement-per-connection-size: 500
+      filters: stat,wall,log4j
+      filter:
+        stat:
+          merge-sql: true
+          slow-sql-millis: 2000
+      web-stat-filter:
+        exclusions: /druid/*
+      stat-view-servlet:
+        login-username: admin
+        login-password: root1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+logging:
+  config: classpath:logback.xml
