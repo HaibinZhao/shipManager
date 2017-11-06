@@ -1,7 +1,7 @@
 package com.waltcow.controller;
 
-import com.waltcow.entity.Role;
-import com.waltcow.entity.User;
+import com.waltcow.model.Role;
+import com.waltcow.model.User;
 import com.waltcow.exception.InvalidPasswordException;
 import com.waltcow.exception.UserAlreadyExistsException;
 import com.waltcow.exception.UserNotFoundException;
@@ -34,14 +34,11 @@ import javax.servlet.http.HttpServletRequest;
  * @author waltcow
  */
 @RestController
+@RequestMapping("/api/auth")
 public class AuthController extends BaseController {
 
     @Value("${auth.header}")
     private String tokenHeader;
-
-    public final static String SIGNUP_URL = "/api/auth/signup";
-    public final static String SIGNIN_URL = "/api/auth/signin";
-    public final static String REFRESH_TOKEN_URL = "/api/auth/token/refresh";
 
     private AuthenticationManager authenticationManager;
     private JwtUtil jwtUtil;
@@ -95,14 +92,12 @@ public class AuthController extends BaseController {
      * @return generated JWT
      * @throws AuthenticationException
      */
-    @PostMapping(SIGNUP_URL)
-    public ResponseEntity createAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest)
-            throws AuthenticationException {
-
+    @PostMapping("/signup")
+    public ResponseEntity createAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
         final String name = authenticationRequest.getUsername();
         final String email = authenticationRequest.getEmail();
         final String password = authenticationRequest.getPassword();
-        LOG.info("[POST] CREATING TOKEN FOR User " + name);
+        LOG.info("[POST] CREATING TOKEN FOR User: " + name);
 
         if(this.userService.findByName(name) != null) {
            throw new UserAlreadyExistsException();
@@ -141,7 +136,7 @@ public class AuthController extends BaseController {
      * @return generated JWT
      * @throws AuthenticationException
      */
-    @PostMapping(SIGNIN_URL)
+    @PostMapping("/signin")
     public ResponseEntity getAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
 
         final String name = authenticationRequest.getUsername();
@@ -169,6 +164,7 @@ public class AuthController extends BaseController {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         final String token = jwtUtil.generateToken(userDetails);
+
         return ResponseEntity.ok(new JwtAuthenticationResponse(token));
     }
 
@@ -177,7 +173,7 @@ public class AuthController extends BaseController {
      * @param request with old JWT
      * @return Refreshed JWT
      */
-    @PostMapping(REFRESH_TOKEN_URL)
+    @PostMapping("/token/refresh")
     public ResponseEntity refreshAuthenticationToken(HttpServletRequest request) {
         String token = request.getHeader(tokenHeader);
         LOG.info("[POST] REFRESHING TOKEN");

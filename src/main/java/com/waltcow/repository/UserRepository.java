@@ -1,12 +1,12 @@
 package com.waltcow.repository;
 
-import com.waltcow.entity.User;
+import com.waltcow.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
  * @author waltcow
- * Provides basic CURD operations with User entity
+ * Provides basic CURD operations with User model
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>{

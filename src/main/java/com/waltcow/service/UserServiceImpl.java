@@ -1,6 +1,6 @@
 package com.waltcow.service;
 
-import com.waltcow.entity.User;
+import com.waltcow.model.User;
 import com.waltcow.exception.UserNotFoundException;
 import com.waltcow.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * @author waltcow
- * UserService provides basic CRUD funtionality for User entity
+ * UserService provides basic CRUD funtionality for User model
  */
 @Service
 public class UserServiceImpl implements UserService {

@@ -1,6 +1,6 @@
 package com.waltcow.service;
 
-import com.waltcow.entity.User;
+import com.waltcow.model.User;
 import com.waltcow.repository.UserRepository;
 import com.waltcow.security.JwtUserFactory;
 import org.springframework.beans.factory.annotation.Autowired;

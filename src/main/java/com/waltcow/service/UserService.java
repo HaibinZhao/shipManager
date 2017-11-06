@@ -1,6 +1,6 @@
 package com.waltcow.service;
 
-import com.waltcow.entity.User;
+import com.waltcow.model.User;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

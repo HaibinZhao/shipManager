@@ -1,7 +1,7 @@
 package com.waltcow.security;
 
-import com.waltcow.entity.Role;
-import com.waltcow.entity.User;
+import com.waltcow.model.Role;
+import com.waltcow.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 

@@ -1,4 +1,4 @@
-package com.waltcow.entity;
+package com.waltcow.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.io.Serializable;
 
-@Entity(name = "roles")
+@Entity(name = "shm_roles")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
