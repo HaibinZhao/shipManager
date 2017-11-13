@@ -5,7 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class  JwtAuthenticationRequest implements Serializable {
+public class JwtAuthenticationRequest implements Serializable {
 
     private String username;
     private String email;

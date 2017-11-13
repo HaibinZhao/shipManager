@@ -1,20 +1,19 @@
 package com.waltcow.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.waltcow.model.Role;
+import com.waltcow.model.RoleName;
 import com.waltcow.model.User;
-import com.waltcow.exception.InvalidPasswordException;
-import com.waltcow.exception.UserAlreadyExistsException;
-import com.waltcow.exception.UserNotFoundException;
 import com.waltcow.security.JwtAuthenticationRequest;
-import com.waltcow.security.JwtAuthenticationResponse;
 import com.waltcow.security.JwtUtil;
 import com.waltcow.security.JwtUser;
 import com.waltcow.service.UserService;
+import com.waltcow.utility.HttpResponseEnum;
+import com.waltcow.utility.WebResult;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,18 +29,20 @@ import javax.persistence.NoResultException;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * AuthController provides signup, signin and token refresh methods
+ * AuthController provides sign_up, sign_in and token refresh methods
  * @author waltcow
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController extends BaseController {
+public class AuthController {
 
     @Value("${auth.header}")
     private String tokenHeader;
 
-    private AuthenticationManager authenticationManager;
     private JwtUtil jwtUtil;
+
+    private AuthenticationManager authenticationManager;
     private UserDetailsService userDetailsService;
     private UserService userService;
 
@@ -93,32 +94,33 @@ public class AuthController extends BaseController {
      * @throws AuthenticationException
      */
     @PostMapping("/signup")
-    public ResponseEntity createAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
+    public WebResult createAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
         final String name = authenticationRequest.getUsername();
         final String email = authenticationRequest.getEmail();
         final String password = authenticationRequest.getPassword();
-        LOG.info("[POST] CREATING TOKEN FOR User: " + name);
 
-        if(this.userService.findByName(name) != null) {
-           throw new UserAlreadyExistsException();
+        log.debug("generate token for user: " + name);
+
+        if (this.userService.findByName(name) != null) {
+            return WebResult.failure(HttpResponseEnum.SIGN_UP_USER_EXIST.getCode(), HttpResponseEnum.SIGN_UP_USER_EXIST.getMsg());
         }
 
-        if(this.userService.findByEmail(email) != null) {
-            throw new UserAlreadyExistsException();
+        if (this.userService.findByEmail(email) != null) {
+            return WebResult.failure(HttpResponseEnum.SIGN_UP_EMAIL_EXIST.getCode(), HttpResponseEnum.SIGN_UP_EMAIL_EXIST.getMsg());
         }
 
-        Role role  = new Role(1L, "USER");
-        userService.save(new User(0L, name, email, password, role));
+        Role role = new Role(1L, RoleName.ROLE_USER);
+        userService.save(new User(0L, name, email, password, true, role));
         JwtUser userDetails;
 
         try {
             userDetails = (JwtUser) userDetailsService.loadUserByUsername(name);
         } catch (UsernameNotFoundException ex) {
-            LOG.error(ex.getMessage());
-            throw new UserNotFoundException();
+            log.error(ex.getMessage());
+            return WebResult.failure(HttpResponseEnum.USER_NOT_EXIST.getCode(), HttpResponseEnum.USER_NOT_EXIST.getMsg());
         } catch (Exception ex) {
-            LOG.error(ex.getMessage());
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+            log.error(ex.getMessage());
+            return WebResult.error(ex.getMessage());
         }
 
         final Authentication authentication = authenticationManager.authenticate(
@@ -126,8 +128,11 @@ public class AuthController extends BaseController {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        final String token = jwtUtil.generateToken(userDetails);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(token));
+
+        JSONObject result = new JSONObject();
+        result.put("token", jwtUtil.generateToken(userDetails));
+
+        return WebResult.success(result);
     }
 
     /**
@@ -137,25 +142,25 @@ public class AuthController extends BaseController {
      * @throws AuthenticationException
      */
     @PostMapping("/signin")
-    public ResponseEntity getAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
+    public WebResult getAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
 
         final String name = authenticationRequest.getUsername();
         final String password = authenticationRequest.getPassword();
-        LOG.info("[POST] GETTING TOKEN FOR User " + name);
+        log.debug("get token from user" + name);
         JwtUser userDetails;
 
         try {
             userDetails = (JwtUser) userDetailsService.loadUserByUsername(name);
         } catch (UsernameNotFoundException | NoResultException ex) {
-            LOG.error(ex.getMessage());
-            throw new UserNotFoundException();
+            log.error(ex.getMessage());
+            return WebResult.failure(HttpResponseEnum.USER_NOT_EXIST.getCode(), HttpResponseEnum.USER_NOT_EXIST.getMsg());
         } catch (Exception ex) {
-            LOG.error(ex.getMessage());
-            return new ResponseEntity<>(ex, HttpStatus.BAD_REQUEST);
+            log.error(ex.getMessage());
+            return WebResult.error(ex.getMessage());
         }
 
         if(!passwordEncoder().matches(password, userDetails.getPassword())) {
-            throw new InvalidPasswordException();
+            return WebResult.failure(HttpResponseEnum.PASSWORD_ERROR.getCode(), HttpResponseEnum.PASSWORD_ERROR.getMsg());
         }
 
         final Authentication authentication = authenticationManager.authenticate(
@@ -163,9 +168,11 @@ public class AuthController extends BaseController {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        final String token = jwtUtil.generateToken(userDetails);
 
-        return ResponseEntity.ok(new JwtAuthenticationResponse(token));
+        JSONObject result = new JSONObject();
+        result.put("token", jwtUtil.generateToken(userDetails));
+
+        return WebResult.success(result);
     }
 
     /**
@@ -174,11 +181,16 @@ public class AuthController extends BaseController {
      * @return Refreshed JWT
      */
     @PostMapping("/token/refresh")
-    public ResponseEntity refreshAuthenticationToken(HttpServletRequest request) {
+    public WebResult refreshAuthenticationToken(HttpServletRequest request) {
         String token = request.getHeader(tokenHeader);
-        LOG.info("[POST] REFRESHING TOKEN");
+        log.info("[POST] REFRESHING TOKEN");
+
         String refreshedToken = jwtUtil.refreshToken(token);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(refreshedToken));
+
+        JSONObject result = new JSONObject();
+        result.put("token", refreshedToken);
+
+        return WebResult.success(result);
     }
 
 }

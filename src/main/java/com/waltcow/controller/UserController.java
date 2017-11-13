@@ -4,6 +4,7 @@ import com.waltcow.repository.UserRepository;
 import com.waltcow.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,7 +18,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  */
 @RestController
 @RequestMapping("/api/user")
-public class UserController extends BaseController {
+public class UserController {
 
     private UserRepository userRepository;
 
@@ -30,6 +31,7 @@ public class UserController extends BaseController {
         this.userRepository = userRepository;
     }
 
+    @PreAuthorize("hasRole('USER')")
     @RequestMapping(value = "/current", method = GET)
     public ResponseEntity currentUser(Principal principal) {
 
@@ -37,5 +39,11 @@ public class UserController extends BaseController {
         User me = userRepository.findByName(username);
 
         return ResponseEntity.ok(me);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/admin", method = GET)
+    public ResponseEntity admin() {
+        return ResponseEntity.ok("Greetings from admin protected method!");
     }
 }

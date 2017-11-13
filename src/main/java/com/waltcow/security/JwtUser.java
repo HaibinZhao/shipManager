@@ -13,13 +13,16 @@ public class JwtUser implements UserDetails {
     private final String name;
     private final String password;
     private final String email;
+    private final boolean enabled;
+
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public JwtUser(Long id, String name, String email, String password,
+    public JwtUser(Long id, String name, String email, String password, boolean enabled,
                    Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.enabled = enabled;
         this.password = password;
         this.authorities = authorities;
     }
@@ -68,7 +71,7 @@ public class JwtUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
     @Override
